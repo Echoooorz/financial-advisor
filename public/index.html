@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Financial Advisor</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <div class="header-content">
+      <h1>💰 Financial Advisor</h1>
+      <p class="subtitle">Two-person retirement planning · Investment strategy · Market intelligence</p>
+    </div>
+    <nav>
+      <button class="nav-btn active" data-tab="retirement">Retirement Planning</button>
+      <button class="nav-btn" data-tab="investable">Investable Cash</button>
+      <button class="nav-btn" data-tab="investment">Investment Strategy</button>
+      <button class="nav-btn" data-tab="digest">Daily Digest</button>
+      <button class="nav-btn" data-tab="opportunities">Value Opportunities</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- RETIREMENT PLANNING -->
+    <section id="retirement" class="tab-content active">
+      <div class="card">
+        <h2>Two-Person Retirement Plan</h2>
+        <p class="card-desc">Person 1 has pre-tax 401K + after-tax 401K + IRA. Person 2 has pre-tax 401K + IRA only.</p>
+
+        <form id="retirementForm">
+          <h3 class="section-title">Shared Info</h3>
+          <div class="form-grid">
+            <div class="form-group"><label for="age">Current Age (both)</label><input type="number" id="age" value="30" min="18" max="80"></div>
+            <div class="form-group"><label for="retirementAge">Retirement Age</label><input type="number" id="retirementAge" value="65" min="50" max="80"></div>
+            <div class="form-group">
+              <label for="filingStatus">Filing Status</label>
+              <select id="filingStatus"><option value="single">Single</option><option value="married" selected>Married Filing Jointly</option></select>
+            </div>
+            <div class="form-group"><label for="returnRate">401K Annual Return (%)</label><input type="number" id="returnRate" value="7" min="0" max="20" step="0.5"></div>
+          </div>
+
+          <div class="two-col">
+            <!-- Person 1 -->
+            <div class="person-col">
+              <h3 class="section-title">👤 Person 1 <span class="hint">Pre-tax + After-tax 401K + IRA</span></h3>
+              <div class="form-grid">
+                <div class="form-group"><label>Current Savings ($)</label><input type="number" id="currentSavingsP1" value="80000" min="0" step="1000"></div>
+                <div class="form-group"><label>Employer Match (%)</label><input type="number" id="employerMatchP1" value="50" min="0" max="100"></div>
+                <div class="form-group"><label>Match Up To (% salary)</label><input type="number" id="employerMatchLimitP1" value="6" min="0" max="100"></div>
+              </div>
+              <h4 class="sub-title">Salary Schedule</h4>
+              <div id="salaryEntriesP1">
+                <div class="inline-row"><label>Age</label><input type="number" class="sal-age-p1" value="30"><label>$</label><input type="number" class="sal-amt-p1" value="180000" step="1000"></div>
+                <div class="inline-row"><label>Age</label><input type="number" class="sal-age-p1" value="35"><label>$</label><input type="number" class="sal-amt-p1" value="230000" step="1000"></div>
+                <div class="inline-row"><label>Age</label><input type="number" class="sal-age-p1" value="40"><label>$</label><input type="number" class="sal-amt-p1" value="280000" step="1000"></div>
+              </div>
+              <button type="button" class="btn-small" onclick="addSalaryRow('P1')">+ Add</button>
+            </div>
+
+            <!-- Person 2 -->
+            <div class="person-col">
+              <h3 class="section-title">👤 Person 2 <span class="hint">Pre-tax 401K + IRA only</span></h3>
+              <div class="form-grid">
+                <div class="form-group"><label>Current Savings ($)</label><input type="number" id="currentSavingsP2" value="40000" min="0" step="1000"></div>
+                <div class="form-group"><label>Employer Match (%)</label><input type="number" id="employerMatchP2" value="50" min="0" max="100"></div>
+                <div class="form-group"><label>Match Up To (% salary)</label><input type="number" id="employerMatchLimitP2" value="4" min="0" max="100"></div>
+              </div>
+              <h4 class="sub-title">Salary Schedule</h4>
+              <div id="salaryEntriesP2">
+                <div class="inline-row"><label>Age</label><input type="number" class="sal-age-p2" value="30"><label>$</label><input type="number" class="sal-amt-p2" value="120000" step="1000"></div>
+                <div class="inline-row"><label>Age</label><input type="number" class="sal-age-p2" value="35"><label>$</label><input type="number" class="sal-amt-p2" value="150000" step="1000"></div>
+                <div class="inline-row"><label>Age</label><input type="number" class="sal-age-p2" value="40"><label>$</label><input type="number" class="sal-amt-p2" value="180000" step="1000"></div>
+              </div>
+              <button type="button" class="btn-small" onclick="addSalaryRow('P2')">+ Add</button>
+            </div>
+          </div>
+
+          <h3 class="section-title">⚡ Low-Income / Startup Years <span class="hint">P1 loses employer match during these years</span></h3>
+          <div id="lowIncomeEntries">
+            <div class="inline-row">
+              <label>From age</label><input type="number" class="low-from" value="33">
+              <label>To age</label><input type="number" class="low-to" value="35">
+              <label>P1 $</label><input type="number" class="low-sal-p1" value="60000" step="1000">
+              <label>P2 $</label><input type="number" class="low-sal-p2" value="120000" step="1000">
+            </div>
+          </div>
+          <button type="button" class="btn-small" onclick="addLowIncomeRow()">+ Add period</button>
+
+          <h3 class="section-title">Annual Expenses (Household)</h3>
+          <div class="form-grid">
+            <div class="form-group"><label>Grocery & Food</label><input type="number" class="expense" data-key="grocery" value="12000" step="100"></div>
+            <div class="form-group"><label>Housing / Rent / Mortgage</label><input type="number" class="expense" data-key="housing" value="36000" step="100"></div>
+            <div class="form-group"><label>Property Tax</label><input type="number" class="expense" data-key="propertyTax" value="8000" step="100"></div>
+            <div class="form-group"><label>Childcare / Education</label><input type="number" class="expense" data-key="childcare" value="20000" step="100"></div>
+            <div class="form-group"><label>Car (payment + insurance)</label><input type="number" class="expense" data-key="car" value="10000" step="100"></div>
+            <div class="form-group"><label>Utilities</label><input type="number" class="expense" data-key="utilities" value="5400" step="100"></div>
+            <div class="form-group"><label>Healthcare / Insurance</label><input type="number" class="expense" data-key="healthcare" value="8000" step="100"></div>
+            <div class="form-group"><label>Travel / Vacation</label><input type="number" class="expense" data-key="travel" value="8000" step="100"></div>
+            <div class="form-group"><label>Loans (student, personal)</label><input type="number" class="expense" data-key="loan" value="6000" step="100"></div>
+            <div class="form-group"><label>Entertainment / Subscriptions</label><input type="number" class="expense" data-key="entertainment" value="4800" step="100"></div>
+            <div class="form-group"><label>Clothing</label><input type="number" class="expense" data-key="clothing" value="3000" step="100"></div>
+            <div class="form-group"><label>Other</label><input type="number" class="expense" data-key="other" value="4000" step="100"></div>
+          </div>
+          <button type="submit" class="btn-primary">Calculate Plan</button>
+          <button type="button" id="saveBtn" class="btn-secondary" onclick="saveRetirementData()" style="margin-left:0.5rem;">💾 Save Inputs</button>
+        </form>
+      </div>
+      <div id="retirementResults" class="results-container" hidden></div>
+    </section>
+
+    <!-- INVESTABLE CASH -->
+    <section id="investable" class="tab-content">
+      <div class="card">
+        <h2>Investable Cash — ETF vs Savings</h2>
+        <p class="card-desc">Decide how to split your investable cash between ETFs and a savings account, then see projected totals at retirement.</p>
+        <div class="form-grid">
+          <div class="form-group"><label for="etfPercent">% into ETFs</label><input type="number" id="etfPercent" value="70" min="0" max="100" step="5"></div>
+          <div class="form-group"><label for="savingsPercent">% into Savings</label><input type="number" id="savingsPercent" value="30" min="0" max="100" step="5"></div>
+          <div class="form-group"><label for="etfReturn">ETF Annual Return (%)</label><input type="number" id="etfReturn" value="10" min="0" max="30" step="0.5"></div>
+          <div class="form-group"><label for="savingsReturn">Savings Annual Return (%)</label><input type="number" id="savingsReturn" value="4.5" min="0" max="15" step="0.1"></div>
+        </div>
+        <button class="btn-primary" onclick="projectInvestable()">Project Growth</button>
+        <p id="investableNote" style="color:var(--text-muted);font-size:0.85rem;margin-top:0.75rem;">Run the Retirement Calculator first to generate yearly investable cash data.</p>
+      </div>
+      <div id="investableResults" class="results-container" hidden></div>
+    </section>
+
+    <!-- INVESTMENT STRATEGY -->
+    <section id="investment" class="tab-content">
+      <div class="card">
+        <h2>Investment Allocation & Recommendations</h2>
+        <p class="card-desc">Personalized allocation with specific stock and ETF picks and historical returns.</p>
+        <form id="investmentForm">
+          <div class="form-grid">
+            <div class="form-group"><label for="invAge">Your Age</label><input type="number" id="invAge" value="30" min="18" max="80"></div>
+            <div class="form-group"><label for="riskTolerance">Risk Tolerance</label><select id="riskTolerance"><option value="conservative">Conservative</option><option value="moderate" selected>Moderate</option><option value="aggressive">Aggressive</option></select></div>
+            <div class="form-group"><label for="investmentAmount">Annual Investment ($)</label><input type="number" id="investmentAmount" value="24000" min="0" step="500"></div>
+            <div class="form-group"><label for="investmentFrequency">Frequency</label><select id="investmentFrequency"><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="biweekly">Bi-weekly</option><option value="monthly" selected>Monthly</option></select></div>
+          </div>
+          <button type="submit" class="btn-primary">Get Recommendations</button>
+        </form>
+      </div>
+      <div id="investmentResults" class="results-container" hidden></div>
+    </section>
+
+    <!-- DAILY DIGEST -->
+    <section id="digest" class="tab-content">
+      <div class="card">
+        <h2>Daily Digest</h2>
+        <p class="card-desc">Macro news, watchlist updates, and investor opinions.</p>
+        <div class="watchlist-controls">
+          <div class="add-watchlist">
+            <input type="text" id="watchlistSymbol" placeholder="Ticker">
+            <input type="text" id="watchlistName" placeholder="Name">
+            <select id="watchlistType"><option value="stock">Stock</option><option value="etf">ETF</option><option value="crypto">Crypto</option></select>
+            <select id="watchlistSector"><option value="big-tech">Big Tech</option><option value="semiconductor">Semiconductor</option><option value="software">Software</option><option value="consumer">Consumer</option><option value="quantum">Quantum</option><option value="etf">ETF</option><option value="gold">Gold</option><option value="crypto">Crypto</option><option value="other">Other</option></select>
+            <button class="btn-secondary" onclick="addToWatchlist()">+ Add</button>
+          </div>
+        </div>
+        <div id="watchlistItems" class="watchlist-grid"></div>
+      </div>
+      <button class="btn-primary" onclick="loadDigest()" style="margin-top:1rem;">Generate Today's Digest</button>
+      <div id="digestResults" class="results-container" hidden></div>
+    </section>
+
+    <!-- VALUE OPPORTUNITIES -->
+    <section id="opportunities" class="tab-content">
+      <div class="card">
+        <h2>Value Investing Opportunities</h2>
+        <p class="card-desc">Undervalued stocks prioritized from your watchlist.</p>
+        <button class="btn-primary" onclick="loadOpportunities()">Find Opportunities</button>
+      </div>
+      <div id="opportunitiesResults" class="results-container" hidden></div>
+    </section>
+  </main>
+
+  <footer><p>⚠️ Educational guidance only — not professional financial advice.</p></footer>
+  <script src="app.js"></script>
+</body>
+</html>
