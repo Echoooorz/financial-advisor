@@ -46,7 +46,7 @@ app.post('/api/retirement/calculate', (req, res) => {
   let cumP2 = Number(currentSavingsP2) || 0;
 
   for (let y = age; y < retirementAge; y++) {
-    const isOver50 = y >= 50;
+    const isOver50 = y >= 45;
     const preTax401kLimit = isOver50 ? 30500 : 23500;
     const totalAnnual401kLimit = 70000;
     const iraLimit = isOver50 ? 8000 : 7000;
