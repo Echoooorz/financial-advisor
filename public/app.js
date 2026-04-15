@@ -214,7 +214,7 @@ function renderRetirementResults(data) {
       <div class="summary-card"><div class="label">P2 Projected</div><div class="value green">${fmt(s.projectedSavingsP2)}</div></div>
       <div class="summary-card"><div class="label">Combined Savings</div><div class="value green">${fmt(s.projectedSavingsTotal)}</div></div>
       <div class="summary-card"><div class="label">Monthly Retirement Income</div><div class="value blue">${fmt(s.monthlyRetirementIncome)}</div></div>
-      <div class="summary-card"><div class="label">Annual Expenses</div><div class="value yellow">${fmt(s.totalAnnualExpenses)}</div></div>
+      <div class="summary-card"><div class="label">Monthly Expenses</div><div class="value yellow">${fmt(s.totalAnnualExpenses / 12)}/mo</div></div>
     </div>`;
 
   const y0 = yearlyPlan[0];
@@ -296,7 +296,8 @@ async function projectInvestable() {
     etfPercent: +document.getElementById('etfPercent').value,
     savingsPercent: +document.getElementById('savingsPercent').value,
     etfReturn: +document.getElementById('etfReturn').value,
-    savingsReturn: +document.getElementById('savingsReturn').value
+    savingsReturn: +document.getElementById('savingsReturn').value,
+    savingsCap: +document.getElementById('savingsCap').value || 0
   };
 
   const res = await fetch('/api/investable/project', {
@@ -314,6 +315,7 @@ function renderInvestableResults(data) {
     <div class="summary-grid">
       <div class="summary-card"><div class="label">ETF Allocation</div><div class="value blue">${s.etfPercent}% @ ${s.etfReturn}/yr</div></div>
       <div class="summary-card"><div class="label">Savings Allocation</div><div class="value yellow">${s.savingsPercent}% @ ${s.savingsReturn}/yr</div></div>
+      <div class="summary-card"><div class="label">Savings Cap</div><div class="value">${s.savingsCap ? fmt(s.savingsCap) : 'No cap'}</div></div>
       <div class="summary-card"><div class="label">Total in ETFs at Retirement</div><div class="value green">${fmt(s.totalETF)}</div></div>
       <div class="summary-card"><div class="label">Total in Savings at Retirement</div><div class="value green">${fmt(s.totalSavings)}</div></div>
       <div class="summary-card"><div class="label">Grand Total (Non-Retirement)</div><div class="value green" style="font-size:1.6rem;">${fmt(s.grandTotal)}</div></div>
@@ -502,3 +504,180 @@ async function submitFeedback(id) {
 
 loadWatchlist();
 loadRetirementData();
+loadExpenses();
+
+// --- Expense Analyzer ---
+async function loadExpenses() {
+  const expenses = await (await fetch('/api/expenses')).json();
+  renderExpenseList(expenses);
+}
+
+function renderExpenseList(expenses) {
+  const container = document.getElementById('expenseList');
+  if (!expenses.length) { container.hidden = true; return; }
+
+  const byCategory = {};
+  let total = 0;
+  expenses.forEach(e => { byCategory[e.category] = (byCategory[e.category] || 0) + e.amount; total += e.amount; });
+  const cats = Object.entries(byCategory).sort((a, b) => b[1] - a[1]);
+
+  let html = `
+    <div class="rec-card">
+      <h3>📊 Expense Summary — ${expenses.length} transactions · ${fmt(total)} total</h3>
+      <div class="alloc-detail" style="margin-bottom:1rem;">
+        ${cats.map(([cat, amt]) => `
+          <div class="alloc-item">
+            <div class="asset-name">${cat}</div>
+            <div class="asset-pct" style="color:var(--accent)">${((amt/total)*100).toFixed(1)}%</div>
+            <div class="asset-amount">${fmt(amt)}</div>
+          </div>
+        `).join('')}
+      </div>
+      <div class="year-table-wrap">
+        <table class="year-table">
+          <thead><tr><th>Date</th><th>Description</th><th>Amount</th><th>Category</th><th>Source</th><th></th></tr></thead>
+          <tbody>
+            ${expenses.slice().reverse().map(e => `
+              <tr>
+                <td>${e.date}</td><td>${e.description}</td>
+                <td style="color:var(--red)">${fmt(e.amount)}</td>
+                <td><span class="rec-badge caution">${e.category}</span></td>
+                <td style="color:var(--text-muted)">${e.source}</td>
+                <td><span class="remove" onclick="deleteExpense('${e.id}')" style="cursor:pointer;color:var(--red);">×</span></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+  container.innerHTML = html;
+  container.hidden = false;
+}
+
+async function addManualExpense() {
+  const date = document.getElementById('manualDate').value || new Date().toISOString().split('T')[0];
+  const description = document.getElementById('manualDesc').value.trim();
+  const amount = +document.getElementById('manualAmount').value;
+  const category = document.getElementById('manualCategory').value;
+  const source = document.getElementById('manualSource').value;
+
+  if (!description || !amount) return;
+
+  await fetch('/api/expenses/add', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ date, description, amount, category, source })
+  });
+  document.getElementById('manualDesc').value = '';
+  document.getElementById('manualAmount').value = '';
+  loadExpenses();
+}
+
+async function deleteExpense(id) {
+  await fetch(`/api/expenses/${id}`, { method: 'DELETE' });
+  loadExpenses();
+}
+
+async function uploadExpenseFile() {
+  const fileInput = document.getElementById('expenseFile');
+  const status = document.getElementById('uploadStatus');
+  if (!fileInput.files.length) { status.textContent = 'Please select a file.'; return; }
+
+  status.textContent = '⏳ Uploading and analyzing...';
+  const formData = new FormData();
+  formData.append('file', fileInput.files[0]);
+
+  try {
+    const res = await fetch('/api/expenses/upload', { method: 'POST', body: formData });
+    const result = await res.json();
+
+    if (result.success) {
+      status.innerHTML = `✅ Added ${result.transactionsAdded} transactions from <strong>${result.fileName}</strong>`;
+      status.style.color = 'var(--green)';
+      loadExpenses();
+
+      // Show upload summary if available
+      if (result.summary) {
+        const container = document.getElementById('analysisResults');
+        let html = `<div class="rec-card"><h3>📄 Upload Summary — ${result.fileName}</h3>`;
+        html += `<p style="color:var(--text-muted);">Total: ${fmt(result.summary.totalSpend)} · Top category: ${result.summary.topCategory}</p>`;
+        if (result.summary.suggestions) {
+          html += `<div class="opp-reasons"><h4>💡 Suggestions</h4><ul>${result.summary.suggestions.map(s => `<li>${s}</li>`).join('')}</ul></div>`;
+        }
+        if (result.note) html += `<p style="font-size:0.78rem;color:var(--text-muted);margin-top:0.5rem;">${result.note}</p>`;
+        html += `</div>`;
+        container.innerHTML = html;
+        container.hidden = false;
+      }
+    } else {
+      status.textContent = '❌ ' + (result.error || 'Upload failed');
+      status.style.color = 'var(--red)';
+    }
+  } catch (err) {
+    status.textContent = '❌ Error: ' + err.message;
+    status.style.color = 'var(--red)';
+  }
+}
+
+async function analyzeExpenses() {
+  const container = document.getElementById('analysisResults');
+  container.innerHTML = '<div class="rec-card"><p>⏳ Running AI analysis...</p></div>';
+  container.hidden = false;
+
+  try {
+    const res = await fetch('/api/expenses/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+    const data = await res.json();
+
+    if (data.error) { container.innerHTML = `<div class="rec-card"><p style="color:var(--red);">${data.error}</p></div>`; return; }
+
+    let html = `
+      <div class="rec-card">
+        <h3>🤖 AI Spending Analysis</h3>
+        <p style="color:var(--text-muted);margin-bottom:1rem;">${data.transactionCount} transactions · ${fmt(data.total)} total</p>`;
+
+    if (data.analysis) {
+      const a = data.analysis;
+      if (a.overallAssessment) html += `<p style="margin-bottom:1rem;">${a.overallAssessment}</p>`;
+
+      if (a.suggestions && a.suggestions.length) {
+        html += `<div class="opp-reasons"><h4>💡 Cost-Saving Suggestions</h4><ul>`;
+        a.suggestions.forEach(s => {
+          html += `<li><strong>${s.category}:</strong> ${s.suggestion}`;
+          if (s.potentialSavings) html += ` <span style="color:var(--green);">(save ${s.potentialSavings})</span>`;
+          html += `</li>`;
+        });
+        html += `</ul></div>`;
+      }
+
+      if (a.alerts && a.alerts.length) {
+        html += `<div style="margin-top:1rem;padding:0.75rem;background:rgba(248,113,113,0.1);border-radius:8px;">`;
+        html += `<strong style="color:var(--red);">⚠️ Alerts</strong><ul style="margin-top:0.5rem;">`;
+        a.alerts.forEach(al => html += `<li style="color:var(--text-muted);font-size:0.88rem;">${al}</li>`);
+        html += `</ul></div>`;
+      }
+
+      if (a.monthlyBudgetRecommendation) {
+        html += `<div style="margin-top:1rem;"><h4 style="font-size:0.85rem;color:var(--text-muted);margin-bottom:0.5rem;">Recommended Monthly Budget</h4>`;
+        html += `<div class="alloc-detail">`;
+        Object.entries(a.monthlyBudgetRecommendation).forEach(([cat, amt]) => {
+          html += `<div class="alloc-item"><div class="asset-name">${cat}</div><div class="asset-amount">${fmt(amt)}/mo</div></div>`;
+        });
+        html += `</div></div>`;
+      }
+    }
+
+    // Category breakdown
+    html += `<div style="margin-top:1.5rem;"><h4 style="font-size:0.85rem;color:var(--text-muted);margin-bottom:0.5rem;">Spending by Category</h4>`;
+    html += `<div class="alloc-detail">`;
+    data.categoryBreakdown.forEach(c => {
+      html += `<div class="alloc-item"><div class="asset-name">${c.category}</div><div class="asset-pct" style="color:var(--accent)">${c.percent}</div><div class="asset-amount">${fmt(c.amount)}</div></div>`;
+    });
+    html += `</div></div>`;
+
+    if (data.note) html += `<p style="font-size:0.78rem;color:var(--text-muted);margin-top:1rem;">${data.note}</p>`;
+    html += `</div>`;
+
+    container.innerHTML = html;
+  } catch (err) {
+    container.innerHTML = `<div class="rec-card"><p style="color:var(--red);">Error: ${err.message}</p></div>`;
+  }
+}

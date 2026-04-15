@@ -17,6 +17,7 @@
       <button class="nav-btn" data-tab="investable">Investable Cash</button>
       <button class="nav-btn" data-tab="investment">Investment Strategy</button>
       <button class="nav-btn" data-tab="digest">Daily Digest</button>
+      <button class="nav-btn" data-tab="expenses">Expense Analyzer</button>
       <button class="nav-btn" data-tab="opportunities">Value Opportunities</button>
     </nav>
   </header>
@@ -87,20 +88,20 @@
           </div>
           <button type="button" class="btn-small" onclick="addLowIncomeRow()">+ Add period</button>
 
-          <h3 class="section-title">Annual Expenses (Household)</h3>
+          <h3 class="section-title">Monthly Expenses (Household)</h3>
           <div class="form-grid">
-            <div class="form-group"><label>Grocery & Food</label><input type="number" class="expense" data-key="grocery" value="12000" step="100"></div>
-            <div class="form-group"><label>Housing / Rent / Mortgage</label><input type="number" class="expense" data-key="housing" value="36000" step="100"></div>
-            <div class="form-group"><label>Property Tax</label><input type="number" class="expense" data-key="propertyTax" value="8000" step="100"></div>
-            <div class="form-group"><label>Childcare / Education</label><input type="number" class="expense" data-key="childcare" value="20000" step="100"></div>
-            <div class="form-group"><label>Car (payment + insurance)</label><input type="number" class="expense" data-key="car" value="10000" step="100"></div>
-            <div class="form-group"><label>Utilities</label><input type="number" class="expense" data-key="utilities" value="5400" step="100"></div>
-            <div class="form-group"><label>Healthcare / Insurance</label><input type="number" class="expense" data-key="healthcare" value="8000" step="100"></div>
-            <div class="form-group"><label>Travel / Vacation</label><input type="number" class="expense" data-key="travel" value="8000" step="100"></div>
-            <div class="form-group"><label>Loans (student, personal)</label><input type="number" class="expense" data-key="loan" value="6000" step="100"></div>
-            <div class="form-group"><label>Entertainment / Subscriptions</label><input type="number" class="expense" data-key="entertainment" value="4800" step="100"></div>
-            <div class="form-group"><label>Clothing</label><input type="number" class="expense" data-key="clothing" value="3000" step="100"></div>
-            <div class="form-group"><label>Other</label><input type="number" class="expense" data-key="other" value="4000" step="100"></div>
+            <div class="form-group"><label>Grocery & Food</label><input type="number" class="expense" data-key="grocery" value="1000" step="50"></div>
+            <div class="form-group"><label>Housing / Rent / Mortgage</label><input type="number" class="expense" data-key="housing" value="3000" step="50"></div>
+            <div class="form-group"><label>Property Tax</label><input type="number" class="expense" data-key="propertyTax" value="667" step="50"></div>
+            <div class="form-group"><label>Childcare / Education</label><input type="number" class="expense" data-key="childcare" value="1667" step="50"></div>
+            <div class="form-group"><label>Car (payment + insurance)</label><input type="number" class="expense" data-key="car" value="833" step="50"></div>
+            <div class="form-group"><label>Utilities</label><input type="number" class="expense" data-key="utilities" value="450" step="50"></div>
+            <div class="form-group"><label>Healthcare / Insurance</label><input type="number" class="expense" data-key="healthcare" value="667" step="50"></div>
+            <div class="form-group"><label>Travel / Vacation</label><input type="number" class="expense" data-key="travel" value="667" step="50"></div>
+            <div class="form-group"><label>Loans (student, personal)</label><input type="number" class="expense" data-key="loan" value="500" step="50"></div>
+            <div class="form-group"><label>Entertainment / Subscriptions</label><input type="number" class="expense" data-key="entertainment" value="400" step="50"></div>
+            <div class="form-group"><label>Clothing</label><input type="number" class="expense" data-key="clothing" value="250" step="50"></div>
+            <div class="form-group"><label>Other</label><input type="number" class="expense" data-key="other" value="333" step="50"></div>
           </div>
           <button type="submit" class="btn-primary">Calculate Plan</button>
           <button type="button" id="saveBtn" class="btn-secondary" onclick="saveRetirementData()" style="margin-left:0.5rem;">💾 Save Inputs</button>
@@ -119,6 +120,7 @@
           <div class="form-group"><label for="savingsPercent">% into Savings</label><input type="number" id="savingsPercent" value="30" min="0" max="100" step="5"></div>
           <div class="form-group"><label for="etfReturn">ETF Annual Return (%)</label><input type="number" id="etfReturn" value="10" min="0" max="30" step="0.5"></div>
           <div class="form-group"><label for="savingsReturn">Savings Annual Return (%)</label><input type="number" id="savingsReturn" value="4.5" min="0" max="15" step="0.1"></div>
+          <div class="form-group"><label for="savingsCap">Max Savings Balance ($)</label><input type="number" id="savingsCap" value="100000" min="0" step="5000" placeholder="Leave 0 for no cap"></div>
         </div>
         <button class="btn-primary" onclick="projectInvestable()">Project Growth</button>
         <p id="investableNote" style="color:var(--text-muted);font-size:0.85rem;margin-top:0.75rem;">Run the Retirement Calculator first to generate yearly investable cash data.</p>
@@ -162,6 +164,57 @@
       </div>
       <button class="btn-primary" onclick="loadDigest()" style="margin-top:1rem;">Generate Today's Digest</button>
       <div id="digestResults" class="results-container" hidden></div>
+    </section>
+
+    <!-- EXPENSE ANALYZER -->
+    <section id="expenses" class="tab-content">
+      <div class="card">
+        <h2>Expense Analyzer</h2>
+        <p class="card-desc">Upload credit card bills or enter expenses manually. AI categorizes spending and suggests savings.</p>
+
+        <div class="two-col" style="margin-bottom:1rem;">
+          <div class="person-col">
+            <h4 class="sub-title">📄 Upload Statement (CSV/TXT)</h4>
+            <input type="file" id="expenseFile" accept=".csv,.txt,.tsv" style="margin-bottom:0.5rem;">
+            <button class="btn-primary" onclick="uploadExpenseFile()">Upload & Analyze</button>
+            <div id="uploadStatus" style="font-size:0.85rem;color:var(--text-muted);margin-top:0.5rem;"></div>
+          </div>
+          <div class="person-col">
+            <h4 class="sub-title">✏️ Add Expense Manually</h4>
+            <div class="form-grid" style="margin-bottom:0.5rem;">
+              <div class="form-group"><label>Date</label><input type="date" id="manualDate"></div>
+              <div class="form-group"><label>Description</label><input type="text" id="manualDesc" placeholder="e.g. Whole Foods"></div>
+              <div class="form-group"><label>Amount ($)</label><input type="number" id="manualAmount" value="" min="0" step="0.01"></div>
+              <div class="form-group">
+                <label>Category</label>
+                <select id="manualCategory">
+                  <option>Grocery</option><option>Dining</option><option>Shopping</option><option>Transportation</option>
+                  <option>Entertainment</option><option>Subscriptions</option><option>Healthcare</option><option>Utilities</option>
+                  <option>Travel</option><option>Education</option><option>Insurance</option><option>Gas</option>
+                  <option>Home</option><option>Personal Care</option><option>Gifts</option><option>Other</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Source</label>
+                <select id="manualSource">
+                  <option value="credit-card">Credit Card</option>
+                  <option value="checking">Checking Account</option>
+                  <option value="savings">Savings Account</option>
+                  <option value="cash">Cash</option>
+                </select>
+              </div>
+            </div>
+            <button class="btn-primary" onclick="addManualExpense()">Add Expense</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="expenseList" class="results-container" hidden></div>
+
+      <div style="margin-top:1rem;">
+        <button class="btn-primary" onclick="analyzeExpenses()">🤖 AI Analysis & Savings Suggestions</button>
+      </div>
+      <div id="analysisResults" class="results-container" hidden></div>
     </section>
 
     <!-- VALUE OPPORTUNITIES -->
